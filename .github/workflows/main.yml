@@ -1,15 +1,15 @@
-name: Build C# Project
+name: Build and Release LocustInjector
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ "main", "master" ]
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
       - name: Checkout repository
@@ -21,16 +21,43 @@ jobs:
           dotnet-version: "10.0.x"
 
       - name: Restore dependencies
-        run: dotnet restore
+        run: dotnet restore LocustInjector/LocustInjector.csproj
 
       - name: Build (Release)
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build LocustInjector/LocustInjector.csproj --configuration Release --no-restore
 
-      - name: Publish (Release)
-        run: dotnet publish -c Release -o publish_output
+      - name: Prepare artifact directory
+        shell: pwsh
+        run: |
+          $outputPath = "LocustInjector/bin/Release/net10.0"
+          $artifactPath = "artifact"
+          
+          # Create artifact directory
+          New-Item -ItemType Directory -Path $artifactPath -Force
+          
+          # Copy main executable and config files
+          Copy-Item "$outputPath/LocustInjector.exe" -Destination $artifactPath
+          Copy-Item "$outputPath/LocustInjector.dll" -Destination $artifactPath
+          Copy-Item "$outputPath/LocustInjector.runtimeconfig.json" -Destination $artifactPath
+          Copy-Item "$outputPath/LocustInjector.deps.json" -Destination $artifactPath
+          
+          # Copy libs folder (created by MSBuild target)
+          if (Test-Path "$outputPath/libs") {
+            Copy-Item "$outputPath/libs" -Destination $artifactPath -Recurse -Force
+          }
+          
+          # Copy locales folder (created by MSBuild target)
+          if (Test-Path "$outputPath/locales") {
+            Copy-Item "$outputPath/locales" -Destination $artifactPath -Recurse -Force
+          }
+          
+          # Copy Maps folder (created by MSBuild target)
+          if (Test-Path "$outputPath/Maps") {
+            Copy-Item "$outputPath/Maps" -Destination $artifactPath -Recurse -Force
+          }
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: build-output
-          path: publish_output
+          name: LocustInjector
+          path: artifact/**/*
