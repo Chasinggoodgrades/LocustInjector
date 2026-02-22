@@ -1,0 +1,64 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="War3Net.Build" Version="6.0.1" />
+    <PackageReference Include="War3Net.Build.Core" Version="6.0.1" />
+    <PackageReference Include="War3Net.CodeAnalysis.Decompilers" Version="6.0.1" />
+    <PackageReference Include="War3Net.IO.Compression" Version="6.0.1" />
+    <PackageReference Include="War3Net.IO.Mpq" Version="6.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="output\" />
+  </ItemGroup>
+
+  <!-- Move all DLLs to libs subfolder and locales to locales folder after build -->
+  <Target Name="MoveLibrariesToSubfolder" AfterTargets="Build">
+    <ItemGroup>
+      <DllFiles Include="$(OutputPath)*.dll" Exclude="$(OutputPath)$(AssemblyName).dll" />
+      <RuntimeFiles Include="$(OutputPath)*.json" Exclude="$(OutputPath)$(AssemblyName).runtimeconfig.json;$(OutputPath)$(AssemblyName).deps.json" />
+      <LocaleFolders Include="$(OutputPath)cs;$(OutputPath)de;$(OutputPath)es;$(OutputPath)fr;$(OutputPath)it;$(OutputPath)ja;$(OutputPath)ko;$(OutputPath)pl;$(OutputPath)pt-BR;$(OutputPath)ru;$(OutputPath)tr;$(OutputPath)zh-Hans;$(OutputPath)zh-Hant" />
+    </ItemGroup>
+    
+    <MakeDir Directories="$(OutputPath)libs" />
+    <MakeDir Directories="$(OutputPath)locales" />
+    
+    <Move SourceFiles="@(DllFiles)" DestinationFolder="$(OutputPath)libs" />
+    <Move SourceFiles="@(RuntimeFiles)" DestinationFolder="$(OutputPath)libs" Condition="'@(RuntimeFiles)' != ''" />
+    
+    <!-- Move locale folders to locales subfolder -->
+    <ItemGroup>
+      <LocaleContents Include="$(OutputPath)cs\**\*.*" />
+      <LocaleContents Include="$(OutputPath)de\**\*.*" />
+      <LocaleContents Include="$(OutputPath)es\**\*.*" />
+      <LocaleContents Include="$(OutputPath)fr\**\*.*" />
+      <LocaleContents Include="$(OutputPath)it\**\*.*" />
+      <LocaleContents Include="$(OutputPath)ja\**\*.*" />
+      <LocaleContents Include="$(OutputPath)ko\**\*.*" />
+      <LocaleContents Include="$(OutputPath)pl\**\*.*" />
+      <LocaleContents Include="$(OutputPath)pt-BR\**\*.*" />
+      <LocaleContents Include="$(OutputPath)ru\**\*.*" />
+      <LocaleContents Include="$(OutputPath)tr\**\*.*" />
+      <LocaleContents Include="$(OutputPath)zh-Hans\**\*.*" />
+      <LocaleContents Include="$(OutputPath)zh-Hant\**\*.*" />
+    </ItemGroup>
+    
+    <Copy SourceFiles="@(LocaleContents)" DestinationFiles="@(LocaleContents->'$(OutputPath)locales\%(RecursiveDir)%(Filename)%(Extension)')" />
+    
+    <RemoveDir Directories="@(LocaleFolders)" />
+    
+    <!-- Create Maps folder in output directory -->
+    <MakeDir Directories="$(OutputPath)Maps" />
+  </Target>
+
+</Project>
+
+
