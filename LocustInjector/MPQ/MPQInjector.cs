@@ -20,6 +20,9 @@ public static class MPQInjector
          * whose JASS contains characters above byte 127. */
         var modifiedJass = File.ReadAllText(modifiedJassPath, System.Text.Encoding.Latin1);
 
+
+        var mapNameStringNumber = ExtractMapNameStringNumber(modifiedJass);
+
         // All MemoryStreams must remain alive until after SaveTo — MpqFile.New may hold
         // a reference to the stream rather than eagerly reading its contents.
         var streamsToDispose = new List<MemoryStream>();
@@ -46,10 +49,12 @@ public static class MPQInjector
                     wtsContent = reader.ReadToEnd();
                 }
 
-                var transformed = WTSInjector.InjectMapNameSuffix(wtsContent);
+                var transformed = mapNameStringNumber != null
+                    ? WTSInjector.InjectMapNameSuffix(wtsContent, mapNameStringNumber)
+                    : WTSInjector.InjectMapNameSuffix(wtsContent);
                 if (transformed != wtsContent)
                 {
-                    Console.WriteLine($"Injecting suffix into STRING 3 of {wtsFileName}...");
+                    Console.WriteLine($"Injecting suffix into STRING {mapNameStringNumber ?? "3"} of {wtsFileName}...");
                     modifiedWts = transformed;
                 }
             }
@@ -107,5 +112,24 @@ public static class MPQInjector
         }
 
         Console.WriteLine($"Saved to: {outputMapPath}");
+    }
+
+    /// <summary>
+    /// Scans the JASS source for a call like SetMapName("TRIGSTR_005") and returns the
+    /// numeric string index (e.g. "5") used to locate the map name entry in war3map.wts.
+    /// Returns null if no such call is found and defaults to parm in <see cref="WTSInjector.InjectMapNameSuffix"/>
+    /// </summary>
+    private static string? ExtractMapNameStringNumber(string jassContent)
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            jassContent,
+            @"SetMapName\s*\(\s*""TRIGSTR_0*(\d+)""\s*\)");
+
+        if (!match.Success)
+            return null;
+
+        var number = match.Groups[1].Value;
+        Console.WriteLine($"Found SetMapName TRIGSTR_{number} in JASS.");
+        return number;
     }
 }

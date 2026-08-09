@@ -87,7 +87,7 @@ public static class Program
                     // Build output filename
                     var fileName = Path.GetFileNameWithoutExtension(mapPath);
                     var extension = Path.GetExtension(mapPath);
-                    var outputFileName = $"{fileName}_vAchesLocust{extension}";
+                    var outputFileName = $"{fileName}_vAches{extension}";
                     var outputPath = Path.Combine(locustMapsFolder, outputFileName);
 
                     // Inject back into map (also patches STRING 3 in war3map.wts if present)

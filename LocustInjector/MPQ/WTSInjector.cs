@@ -5,18 +5,18 @@ public static class WTSInjector
     public const string TargetWtsFileName = "war3map.wts";
     private const string Suffix = "_vAches";
 
-    private static readonly Regex String3Regex = new Regex(
-        @"(STRING\s+3\s*\r?\n\{\r?\n)(.*?)(\r?\n\})",
-        RegexOptions.Singleline | RegexOptions.Compiled);
-
     /// <summary>
     /// Appends the "_vAches" suffix to the map-name text stored in STRING 3 of the
     /// given war3map.wts content, if that block exists. Returns the content
     /// unchanged if STRING 3 is not found.
     /// </summary>
-    public static string InjectMapNameSuffix(string wtsContent)
+    public static string InjectMapNameSuffix(string wtsContent, string stringValue = "3")
     {
-        return String3Regex.Replace(wtsContent, match =>
+        var regex = new Regex(
+            $@"(STRING\s+{Regex.Escape(stringValue)}\s*\r?\n\{{\r?\n)(.*?)(\r?\n\}})",
+            RegexOptions.Singleline | RegexOptions.Compiled);
+
+        return regex.Replace(wtsContent, match =>
         {
             var header = match.Groups[1].Value;
             var body = match.Groups[2].Value;
