@@ -25,6 +25,9 @@
   <ItemGroup>
     <Folder Include="Debug\" />
     <Folder Include="libs\" />
+	<Content Include="Jass/**">
+		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+	</Content>
   </ItemGroup>
 
   <!-- Move all DLLs to libs subfolder and locales to locales folder after build -->
@@ -57,8 +60,8 @@
       <LocaleContents Include="$(OutputPath)zh-Hans\**\*.*" />
       <LocaleContents Include="$(OutputPath)zh-Hant\**\*.*" />
     </ItemGroup>
-    
-    <Copy SourceFiles="@(LocaleContents)" DestinationFiles="@(LocaleContents->'$(OutputPath)locales\%(RecursiveDir)%(Filename)%(Extension)')" />
+
+	  <Copy SourceFiles="@(LocaleContents)" DestinationFiles="@(LocaleContents->'$(OutputPath)locales\%(RecursiveDir)%(Filename)%(Extension)')" />
     
     <RemoveDir Directories="@(LocaleFolders)" />
     
