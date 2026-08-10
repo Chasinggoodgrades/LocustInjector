@@ -486,6 +486,7 @@
             call ShowUnit(u, false)
             call UnitRemoveAbility(u, 'Aloc')
             call ShowUnit(u, true)
+            call BlzSetUnitBooleanField(u, UNIT_BF_HERO_HIDE_HERO_DEATH_MESSAGE, true)
         endif
     endfunction
 
@@ -503,7 +504,30 @@
     // RTR Command -- BUILT IN BABY
     // ================================================================
     function CommandsManager___Commands_RTR takes nothing returns nothing
-        // Whatever RTR Logic stuff
+        local integer i = 0
+        local integer j = 0
+        local player p
+        local unit u
+        loop
+            exitwhen i >= 24
+            set p = Player(i)
+            if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING then
+                set u = vAches_Escapers[GetConvertedPlayerId(p)]
+                call SetHeroLevelBJ(u, 10, false)
+                // Max Unholy Aura, Endurance Aura, Wind Walk
+                loop
+                    exitwhen j >= 3
+                    call SelectHeroSkill(u, 'AOae')
+                    call SelectHeroSkill(u, 'AUau')
+                    call SelectHeroSkill(u, 'AOwk')
+                    set j = j + 1
+                endloop
+                // Line below doesn't work. Cannot get around the object editor default speed limits
+                // Perhaps have Wind Walk constantly activated? :)
+                call SetUnitMoveSpeed(u, 522.00)
+            endif
+            set i = i + 1
+        endloop
     endfunction
 
     // ===============================================================
