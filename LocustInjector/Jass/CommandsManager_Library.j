@@ -515,6 +515,7 @@
                 set u = vAches_Escapers[GetConvertedPlayerId(p)]
                 call SetHeroLevelBJ(u, 10, false)
                 // Max Unholy Aura, Endurance Aura, Wind Walk
+                set j = 0
                 loop
                     exitwhen j >= 3
                     call SelectHeroSkill(u, 'AOae')
