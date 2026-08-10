@@ -314,7 +314,7 @@
     endfunction
 
     // ================================================================
-    // Hero Finder -- Populates Escapers[] for human, non-computer players
+    // Hero Finder -- Populates vAches_Escapers[] for human, non-computer players
     // Doesn't assume heroes exist at map init; polls every second until
     // every human playing slot has a hero recorded, then stops itself.
     // Won't overwrite anything already set (e.g. via Locust Injector).
@@ -346,7 +346,7 @@
             exitwhen i >= 24
             set p = Player(i)
             if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING then
-                if Escapers[GetConvertedPlayerId(p)] == null or GetUnitTypeId(Escapers[GetConvertedPlayerId(p)]) == 0 then
+                if vAches_Escapers[GetConvertedPlayerId(p)] == null or GetUnitTypeId(vAches_Escapers[GetConvertedPlayerId(p)]) == 0 then
                     set found = null
                     call GroupEnumUnitsOfPlayer(HeroFindGroup, p, null)
                     loop
@@ -358,7 +358,7 @@
                         endif
                     endloop
                     if found != null then
-                        set Escapers[GetConvertedPlayerId(p)] = found
+                        set vAches_Escapers[GetConvertedPlayerId(p)] = found
                         set FoundHeroCount = FoundHeroCount + 1
                     endif
                 endif
@@ -459,10 +459,10 @@
     // ================================================================
     function CommandsManager___SetHeroLevelActions takes nothing returns nothing
         local integer p = GetConvertedPlayerId(GetEnumPlayer())
-        local unit u = Escapers[p]
+        local unit u = vAches_Escapers[p]
 
         if (u != null) then 
-            call SetHeroLevelBJ(u, TEMP_INT, true)
+            call SetHeroLevelBJ(u, vAches_INT, true)
         endif
     endfunction
 
@@ -470,7 +470,7 @@
     // Level Command Setup For ResolvePlayerIdArray and ForEachResolvedPlayer
     // ================================================================
     function CommandsManager___Commands_SetHeroLevel takes nothing returns nothing
-        set TEMP_INT = GetArgInt(0)
+        set vAches_INT = GetArgInt(0)
         call ResolvePlayerIdArray(GetArg(1))
         call ForEachResolvedPlayer(function CommandsManager___SetHeroLevelActions)
     endfunction
@@ -480,7 +480,7 @@
     // ================================================================
     function CommandsManager___Commands_LocustMe takes nothing returns nothing
         local player p = GetTriggerPlayer()
-        local unit u = Escapers[GetConvertedPlayerId(p)]
+        local unit u = vAches_Escapers[GetConvertedPlayerId(p)]
         if u != null then
             call UnitAddAbility(u, 'Aloc')
             call ShowUnit(u, false)
@@ -511,15 +511,15 @@
     // ================================================================
     function CommandsManager___ShareActions takes nothing returns nothing
         local player p = GetEnumPlayer()
-        call SetPlayerAlliance(p, TEMP_PLAYER, ALLIANCE_SHARED_CONTROL, TEMP_BOOL)
+        call SetPlayerAlliance(p, vAches_PLAYER, ALLIANCE_SHARED_CONTROL, vAches_BOOL)
     endfunction
 
     // ===============================================================
     // Share Command Setup For ResolvePlayerIdArray and ForEachResolvedPlayer
     // ================================================================
     function CommandsManager___Commands_Share takes nothing returns nothing
-        set TEMP_PLAYER = GetTriggerPlayer()
-        set TEMP_BOOL = GetArgBool(1)
+        set vAches_PLAYER = GetTriggerPlayer()
+        set vAches_BOOL = GetArgBool(1)
         call ResolvePlayerIdArray(GetArg(0))
         call ForEachResolvedPlayer(function CommandsManager___ShareActions)
     endfunction
@@ -540,7 +540,7 @@
         call RegisterCommand("level" , "lvl" , COMMAND_TIER_DEVELOPER , "[level]" , "Sets your hero's level to the passed value" , function CommandsManager___Commands_SetHeroLevel) // This is more or less an example rather than a useable command for anyone.
         call RegisterCommand("locustme" , "locust" , COMMAND_TIER_ALL , "" , "Applies the locust effect to your hero if it didn't on init or spawn" , function CommandsManager___Commands_LocustMe)
         call RegisterCommand("rtr" , "" , COMMAND_TIER_DEVELOPER , "" , "Runs RTR logic [NOT YET IMPLEMENTED]" , function CommandsManager___Commands_RTR)
-        call RegisterCommand("herofix" , "" , COMMAND_TIER_ALL , "" , "Updates the Escapers[] array, only use if locust command isn't working." , function CommandsManager___Commands_HeroeFix)
+        call RegisterCommand("herofix" , "" , COMMAND_TIER_ALL , "" , "Updates the vAches_Escapers[] array, only use if locust command isn't working." , function CommandsManager___Commands_HeroeFix)
         call RegisterCommand("share" , "" , COMMAND_TIER_RED , "[player] [on/off]" , "Shares (or unshares) control with the given player(s)" , function CommandsManager___Commands_Share)
         
         loop

@@ -8,10 +8,10 @@ integer COMMAND_TIER_ADMIN= 3
 integer COMMAND_TIER_DEVELOPER= 4
         
 // These Values Are Manually Put in For Locust Injector
-integer TEMP_INT= 0
-real TEMP_REAL= 0.0
-boolean TEMP_BOOL = false
-player TEMP_PLAYER = null
+integer vAches_INT= 0
+real vAches_REAL= 0.0
+boolean vAches_BOOL = false
+player vAches_PLAYER = null
 
 integer TotalCommands= 0
 
@@ -44,8 +44,8 @@ integer CommandsManager___VipCount= 0
 
 force CommandsManager___ResolvedForce= CreateForce()
 
-// Hero Finder (populates Escapers[] for human, non-computer players)
-unit array Escapers
+// Hero Finder (populates vAches_Escapers[] for human, non-computer players)
+unit array vAches_Escapers
 timer HeroFinderTimer = CreateTimer()
 group HeroFindGroup = CreateGroup()
 integer TotalHumanPlayers = 0
