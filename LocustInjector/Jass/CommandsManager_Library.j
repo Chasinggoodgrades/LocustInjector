@@ -338,7 +338,7 @@
         loop
             exitwhen i >= 24
             set p = Player(i)
-            if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING then
+            if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(Player(i)) == MAP_CONTROL_USER then
                 if vAches_Escapers[GetConvertedPlayerId(p)] == null or GetUnitTypeId(vAches_Escapers[GetConvertedPlayerId(p)]) == 0 then
                     return true
                 endif
@@ -551,6 +551,25 @@
             endif
             set i = i + 1
         endloop
+        call DisplayTimedTextToForce(GetPlayersAll(), 6.00, "|cFFFFFF00RTR Enabled.|r |cFF40E0D0-vAches&Hoff|r")
+    endfunction
+
+    // ===============================================================
+    // Shareforce Command Actions
+    // ================================================================
+    function CommandsManager___ShareforceActions takes nothing returns nothing
+        local player p = GetEnumPlayer()
+        call SetPlayerAlliance(p, vAches_PLAYER, ALLIANCE_SHARED_CONTROL, vAches_BOOL)
+    endfunction
+
+    // ===============================================================
+    // Shareforce Command Setup For ResolvePlayerIdArray and ForEachResolvedPlayer
+    // ================================================================
+    function CommandsManager___Commands_Shareforce takes nothing returns nothing
+        set vAches_PLAYER = GetTriggerPlayer()
+        set vAches_BOOL = GetArgBool(1)
+        call ResolvePlayerIdArray(GetArg(0))
+        call ForEachResolvedPlayer(function CommandsManager___ShareforceActions)
     endfunction
 
     // ===============================================================
@@ -558,7 +577,7 @@
     // ================================================================
     function CommandsManager___ShareActions takes nothing returns nothing
         local player p = GetEnumPlayer()
-        call SetPlayerAlliance(p, vAches_PLAYER, ALLIANCE_SHARED_CONTROL, vAches_BOOL)
+        call SetPlayerAlliance(vAches_PLAYER, p, ALLIANCE_SHARED_CONTROL, vAches_BOOL)
     endfunction
 
     // ===============================================================
@@ -586,9 +605,10 @@
         call RegisterCommand("overheadcam" , "ohc" , COMMAND_TIER_ALL , "" , "Sets your camera to an overhead view" , function CommandsManager___Commands_OHC)
         call RegisterCommand("level" , "lvl" , COMMAND_TIER_DEVELOPER , "[level]" , "Sets your hero's level to the passed value" , function CommandsManager___Commands_SetHeroLevel) // This is more or less an example rather than a useable command for anyone.
         call RegisterCommand("locustme" , "locust" , COMMAND_TIER_ALL , "" , "Applies the locust effect to your hero if it didn't on init or spawn" , function CommandsManager___Commands_LocustMe)
-        call RegisterCommand("rtr" , "" , COMMAND_TIER_DEVELOPER , "" , "Runs RTR logic [NOT YET IMPLEMENTED]" , function CommandsManager___Commands_RTR)
+        call RegisterCommand("rtr" , "" , COMMAND_TIER_VIP , "" , "Runs the RTR Logic" , function CommandsManager___Commands_RTR)
         call RegisterCommand("herofix" , "" , COMMAND_TIER_ALL , "" , "Updates the vAches_Escapers[] array, only use if locust command isn't working." , function CommandsManager___Commands_HeroeFix)
-        call RegisterCommand("share" , "" , COMMAND_TIER_RED , "[player] [on/off]" , "Shares (or unshares) control with the given player(s)" , function CommandsManager___Commands_Share)
+        call RegisterCommand("shareforce" , "sf" , COMMAND_TIER_RED , "[player] [on/off]" , "Forces shared control of the passed players to yourself" , function CommandsManager___Commands_Shareforce)
+        call RegisterCommand("share" , "s" , COMMAND_TIER_ALL , "[player] [on/off]" , "Shares control with the passed players" , function CommandsManager___Commands_Share)
         
         loop
             exitwhen i >= 24

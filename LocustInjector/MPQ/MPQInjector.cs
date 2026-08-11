@@ -59,6 +59,28 @@ public static class MPQInjector
                 }
             }
 
+            // Read and transform war3mapMisc.txt (if present) up front as well. If the
+            // file doesn't exist at all, treat it as empty content so a new one is created.
+            string? modifiedMisc = null;
+            var miscFileName = MiscInjector.TargetMiscFileName;
+            var miscExists = originalArchive.FileExists(miscFileName);
+            string? miscContent = null;
+            if (miscExists)
+            {
+                using var miscStream = originalArchive.OpenFile(miscFileName);
+                using var reader = new StreamReader(miscStream, System.Text.Encoding.Latin1);
+                miscContent = reader.ReadToEnd();
+            }
+
+            var transformedMisc = MiscInjector.InjectMaxUnitSpeed(miscContent);
+            if (transformedMisc != miscContent)
+            {
+                Console.WriteLine(miscExists
+                    ? $"Injecting MaxUnitSpeed into {miscFileName}..."
+                    : $"Creating {miscFileName} with MaxUnitSpeed...");
+                modifiedMisc = transformedMisc;
+            }
+
             // Use an empty builder and manually copy every file from the original archive,
             // skipping only the JASS (and, if modified, WTS) entries. This avoids the HashSet
             // deduplication path in MpqArchiveBuilder(MpqArchive) that was silently keeping
@@ -68,7 +90,8 @@ public static class MPQInjector
             {
                 if (mpqFile is MpqKnownFile knownFile &&
                     (string.Equals(knownFile.FileName, jassFileName, StringComparison.OrdinalIgnoreCase) ||
-                     (modifiedWts != null && string.Equals(knownFile.FileName, wtsFileName, StringComparison.OrdinalIgnoreCase))))
+                     (modifiedWts != null && string.Equals(knownFile.FileName, wtsFileName, StringComparison.OrdinalIgnoreCase)) ||
+                     (modifiedMisc != null && string.Equals(knownFile.FileName, miscFileName, StringComparison.OrdinalIgnoreCase))))
                     continue;
 
                 builder.AddFile(mpqFile);
@@ -85,6 +108,14 @@ public static class MPQInjector
                 var wtsStream = new MemoryStream(wtsBytes);
                 streamsToDispose.Add(wtsStream);
                 builder.AddFile(MpqFile.New(wtsStream, wtsFileName));
+            }
+
+            if (modifiedMisc != null)
+            {
+                var miscBytes = System.Text.Encoding.Latin1.GetBytes(modifiedMisc);
+                var miscStream = new MemoryStream(miscBytes);
+                streamsToDispose.Add(miscStream);
+                builder.AddFile(MpqFile.New(miscStream, miscFileName));
             }
 
             Console.WriteLine("Saving modified archive...");
