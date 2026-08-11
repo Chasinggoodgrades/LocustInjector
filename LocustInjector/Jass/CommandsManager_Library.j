@@ -321,6 +321,7 @@
     // ================================================================
     function CommandsManager___CountHumanPlayers takes nothing returns nothing
         local integer i = 0
+        set TotalHumanPlayers = 0
         loop
             exitwhen i >= 24
             if GetPlayerSlotState(Player(i)) == PLAYER_SLOT_STATE_PLAYING and GetPlayerController(Player(i)) == MAP_CONTROL_USER then
@@ -330,17 +331,36 @@
         endloop
     endfunction
 
+    // Added check for MoG3 style hero selectors
+    function CommandsManager___HeroHasChanged takes nothing returns boolean
+        local integer i = 0
+        local player p
+        loop
+            exitwhen i >= 24
+            set p = Player(i)
+            if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING then
+                if vAches_Escapers[GetConvertedPlayerId(p)] == null or GetUnitTypeId(vAches_Escapers[GetConvertedPlayerId(p)]) == 0 then
+                    return true
+                endif
+            endif
+            set i = i + 1
+        endloop
+        return false
+    endfunction
+
     function CommandsManager___TryFindHeroes takes nothing returns nothing
         local integer i = 0
         local player p
         local unit u
         local unit found
-        if FoundHeroCount >= TotalHumanPlayers then
-            call DisplayTimedTextToForce(GetPlayersAll(), 6.00, "|cFFFFFF00All maze heroes found.|r |cFF40E0D0-vAches|r")
-            call PauseTimer(HeroFinderTimer)
-            call DestroyTimer(HeroFinderTimer)
-            set HeroFinderTimer = null
-            return
+        if not CommandsManager___HeroHasChanged() then
+            if FoundHeroCount >= TotalHumanPlayers then
+                call DisplayTimedTextToForce(GetPlayersAll(), 6.00, "|cFFFFFF00All maze heroes found.|r |cFF40E0D0-vAches|r")
+                call PauseTimer(HeroFinderTimer)
+                call DestroyTimer(HeroFinderTimer)
+                set HeroFinderTimer = null
+                return
+            endif
         endif
         loop
             exitwhen i >= 24
@@ -370,7 +390,9 @@
     function CommandsManager___InitHeroFinder takes nothing returns nothing
         call CommandsManager___CountHumanPlayers()
         call CommandsManager___TryFindHeroes()
-        call TimerStart(HeroFinderTimer, 2.00, true, function CommandsManager___TryFindHeroes)
+        // Timer increased to handle mazes like MoG3 that allow hero changes for the first 4 seconds with ESC key
+        // The issue with MoG3 is that it will find a valid hero at Init, but the hero can then be cycled for first 4 seconds
+        call TimerStart(HeroFinderTimer, 5.00, true, function CommandsManager___TryFindHeroes)
     endfunction
 
     // ================================================================
@@ -486,6 +508,7 @@
             call ShowUnit(u, false)
             call UnitRemoveAbility(u, 'Aloc')
             call ShowUnit(u, true)
+            call BlzSetUnitBooleanField(u, UNIT_BF_HERO_HIDE_HERO_DEATH_MESSAGE, true)
         endif
     endfunction
 
@@ -503,7 +526,31 @@
     // RTR Command -- BUILT IN BABY
     // ================================================================
     function CommandsManager___Commands_RTR takes nothing returns nothing
-        // Whatever RTR Logic stuff
+        local integer i = 0
+        local integer j = 0
+        local player p
+        local unit u
+        loop
+            exitwhen i >= 24
+            set p = Player(i)
+            if GetPlayerSlotState(p) == PLAYER_SLOT_STATE_PLAYING then
+                set u = vAches_Escapers[GetConvertedPlayerId(p)]
+                call SetHeroLevelBJ(u, 10, false)
+                // Max Unholy Aura, Endurance Aura, Wind Walk
+                set j = 0
+                loop
+                    exitwhen j >= 3
+                    call SelectHeroSkill(u, 'AOae')
+                    call SelectHeroSkill(u, 'AUau')
+                    call SelectHeroSkill(u, 'AOwk')
+                    set j = j + 1
+                endloop
+                // Line below doesn't work. Cannot get around the object editor default speed limits
+                // Perhaps have Wind Walk constantly activated? :)
+                call SetUnitMoveSpeed(u, 522.00)
+            endif
+            set i = i + 1
+        endloop
     endfunction
 
     // ===============================================================
