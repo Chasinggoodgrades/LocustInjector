@@ -28,6 +28,9 @@
 	<Content Include="Jass/**">
 		<CopyToOutputDirectory>Always</CopyToOutputDirectory>
 	</Content>
+	<Content Include="MPQ/listfile.txt">
+		<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+	</Content>
   </ItemGroup>
 
   <!-- Move all DLLs to libs subfolder and locales to locales folder after build -->
