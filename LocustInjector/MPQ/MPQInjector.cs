@@ -30,9 +30,30 @@ public static class MPQInjector
         {
             using var originalArchive = MpqArchive.Open(mapPath, loadListFile: true);
 
-            var jassFileName = originalArchive.FileExists("Scripts\\war3map.j")
-                ? "Scripts\\war3map.j"
-                : "war3map.j";
+            int known = 0, other = 0;
+            foreach (var f in originalArchive.GetMpqFiles())
+            {
+                if (f is MpqKnownFile k)
+                {
+                    known++;
+                    if (k.FileName.Contains("war3map.j", StringComparison.OrdinalIgnoreCase) ||
+                        k.FileName.Contains("listfile", StringComparison.OrdinalIgnoreCase) ||
+                        k.FileName.Contains("attributes", StringComparison.OrdinalIgnoreCase))
+                        Console.WriteLine($"  {k.FileName}");
+                }
+                else other++;
+            }
+            Console.WriteLine($"Known files: {known}, Other: {other}");
+
+            var jassCandidates = new[] { "Scripts\\war3map.j", "war3map.j" };
+
+            var jassFileName = jassCandidates.FirstOrDefault(originalArchive.FileExists);
+
+            if (jassFileName == null)
+
+                throw new FileNotFoundException("Could not locate war3map.j inside the archive (checked root and Scripts\\ paths).");
+
+
 
             Console.WriteLine($"Injecting {jassFileName}...");
 
@@ -94,7 +115,7 @@ public static class MPQInjector
                      (modifiedMisc != null && string.Equals(knownFile.FileName, miscFileName, StringComparison.OrdinalIgnoreCase))))
                     continue;
 
-                builder.AddFile(mpqFile);
+                builder.AddFile(mpqFile, mpqFile.TargetFlags);
             }
 
             var jassBytes = System.Text.Encoding.Latin1.GetBytes(modifiedJass);
@@ -116,6 +137,24 @@ public static class MPQInjector
                 var miscStream = new MemoryStream(miscBytes);
                 streamsToDispose.Add(miscStream);
                 builder.AddFile(MpqFile.New(miscStream, miscFileName));
+            }
+
+            // Safety net: if any (name hash, locale) pair ends up duplicated in the file list
+            // we're about to save, MpqArchive silently keeps only one copy of it (see the bug
+            // fixed above) — meaning either the injection didn't take effect, or something else
+            // about this specific map's layout wasn't accounted for. Fail loudly here instead of
+            // producing a map that looks fine to this tool but won't load in Warcraft 3.
+            var duplicateGroups = builder.ModifiedFiles
+                .GroupBy(f => (f.Name, f.Locale))
+                .Where(g => g.Count() > 1)
+                .ToList();
+            if (duplicateGroups.Count > 0)
+            {
+                var names = string.Join(", ", duplicateGroups.Select(g => $"0x{g.Key.Name:X16}"));
+                throw new InvalidOperationException(
+                    $"Refusing to save: {duplicateGroups.Count} file name hash(es) would be duplicated in the output archive ({names}). " +
+                    "This means an injected file (war3map.j / war3map.wts / war3mapMisc.txt) didn't correctly replace the original entry — " +
+                    "saving anyway would silently produce a map Warcraft 3 may fail to load.");
             }
 
             Console.WriteLine("Saving modified archive...");

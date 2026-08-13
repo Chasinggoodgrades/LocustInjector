@@ -61,28 +61,52 @@ public static class MPQExtractor
 
     private static void ExtractJassScript(MpqArchive archive, string outputPath)
     {
-        var possibleLocations = new[] { "war3map.j", "Scripts\\war3map.j" };
-        
-        var jassFile = possibleLocations.FirstOrDefault(archive.FileExists);
-
-        if (jassFile == null)
+        string[] possibleLocations =
         {
-            Console.WriteLine("\nwar3map.j not found in archive (checked root and Scripts folder).");
+        "war3map.j",
+        "Scripts\\war3map.j"
+    };
+
+        string? foundPath = null;
+
+        foreach (var location in possibleLocations)
+        {
+            if (archive.FileExists(location))
+            {
+                foundPath = location;
+                break;
+            }
+        }
+
+        // Fallback: look through every named file for war3map.j
+        if (foundPath == null)
+        {
+            foundPath = archive
+                .Where(e => !string.IsNullOrEmpty(e.FileName))
+                .Select(e => e.FileName!)
+                .FirstOrDefault(name => name.Equals("war3map.j", StringComparison.OrdinalIgnoreCase) ||
+                                        name.EndsWith("\\war3map.j", StringComparison.OrdinalIgnoreCase) ||
+                                        name.EndsWith("/war3map.j", StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (foundPath == null)
+        {
+            Console.WriteLine("\nwar3map.j not found in archive.");
             return;
         }
 
-        Console.WriteLine($"\nExtracting {jassFile}...");
-        
+        Console.WriteLine($"\nFound war3map.j at: {foundPath}");
+
         Directory.CreateDirectory(outputPath);
-        
+
         var outputFilePath = Path.Combine(outputPath, "war3map.j");
-        
-        using (var mpqStream = archive.OpenFile(jassFile))
+
+        using (var mpqStream = archive.OpenFile(foundPath))
         using (var fileStream = File.Create(outputFilePath))
         {
             mpqStream.CopyTo(fileStream);
         }
-        
+
         Console.WriteLine($"Saved to: {outputFilePath}");
     }
 }

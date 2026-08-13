@@ -68,6 +68,7 @@ public static class Program
 
             int processed = 0;
             int failed = 0;
+            var failedMaps = new List<string>();
             var separator = new string('=', 60);
 
             foreach (var mapPath in mapsToProcess)
@@ -101,6 +102,7 @@ public static class Program
                     Console.WriteLine($"\nFailed to process {Path.GetFileName(mapPath)}");
                     Console.WriteLine($"Error: {ex.Message}");
                     failed++;
+                    failedMaps.Add(Path.GetFileName(mapPath));
                 }
                 finally
                 {
@@ -121,6 +123,11 @@ public static class Program
             if (failed > 0)
             {
                 Console.WriteLine($"Failed: {failed}");
+                Console.WriteLine("Failed maps:");
+                foreach (var name in failedMaps)
+                {
+                    Console.WriteLine($"  - {name}");
+                }
             }
             Console.WriteLine($"Output folder: {locustMapsFolder}");
             Console.WriteLine(separator);
