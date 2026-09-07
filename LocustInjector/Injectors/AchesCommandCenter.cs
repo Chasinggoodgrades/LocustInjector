@@ -1,4 +1,6 @@
-﻿public sealed class AchesCommandCenterInjector : IJassInjector
+﻿using System.Reflection;
+
+public sealed class AchesCommandCenterInjector : IJassInjector
 {
     public string Name => "Aches Command Center";
 
@@ -29,11 +31,22 @@ call ExecuteFunc(""CommandsManager___InitCommands"")
 
     private static string GetAchesCommandCenterCode()
     {
-        return File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Jass", "CommandsManager_Globals.j"));
+        return ReadEmbeddedJassResource("CommandsManager_Globals.j");
     }
 
     private static string GetAchesCommandCenterCode2()
     {
-        return File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Jass", "CommandsManager_Library.j"));
+        return ReadEmbeddedJassResource("CommandsManager_Library.j");
+    }
+
+    private static string ReadEmbeddedJassResource(string fileName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = $"{assembly.GetName().Name}.Jass.{fileName}";
+
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Embedded JASS resource '{resourceName}' was not found.");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 }
