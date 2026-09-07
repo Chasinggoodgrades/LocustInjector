@@ -56,8 +56,12 @@ jobs:
             Copy-Item "$outputPath/Maps" -Destination $artifactPath -Recurse -Force
           }
 
+      - name: Zip release
+        shell: pwsh
+        run: Compress-Archive -Path artifact/* -DestinationPath "LocustInjector-build${{ github.run_number }}.zip"
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:
-          name: LocustInjector
-          path: artifact/**/*
+          name: LocustInjector-build${{ github.run_number }}
+          path: LocustInjector-build${{ github.run_number }}.zip
