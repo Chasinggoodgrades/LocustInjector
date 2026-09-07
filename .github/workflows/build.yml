@@ -34,3 +34,16 @@ jobs:
         with:
           name: LocustInjector-build-${{ github.sha }}
           path: ./publish
+
+      - name: Zip release
+        run: |
+          powershell Compress-Archive -Path ./publish/* -DestinationPath ./LocustInjector-${{ github.sha }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "build-${{ github.sha }}"
+          name: "LocustInjector Build ${{ github.sha }}"
+          files: "./LocustInjector-${{ github.sha }}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
