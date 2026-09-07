@@ -70,7 +70,9 @@ function Trig_LocustInit_Actions takes nothing returns nothing
                 call UnitRemoveAbility(u, {BearFormAbilityCode})
         endif
         call BlzSetUnitBooleanField(u, UNIT_BF_HERO_HIDE_HERO_DEATH_MESSAGE, true)
-
+        if not IsUnitType(u, UNIT_TYPE_HERO) then
+            call BlzSetUnitRealField(u, UNIT_RF_SELECTION_SCALE, -10.0)
+        endif
         call GroupRemoveUnit(g, u)
     endloop
     call DestroyGroup(g)
@@ -105,6 +107,9 @@ function Trig_LocustEnter_Actions takes nothing returns nothing
         call IssueImmediateOrder(u, ""bearform"")
         call UnitRemoveAbility(u, {BearFormAbilityCode})
         call BlzSetUnitBooleanField(u, UNIT_BF_HERO_HIDE_HERO_DEATH_MESSAGE, true)
+        if not IsUnitType(u, UNIT_TYPE_HERO) then
+            call BlzSetUnitRealField(u, UNIT_RF_SELECTION_SCALE, -10.0)
+        endif
 endfunction
 
 function InitTrig_LocustEnter takes nothing returns nothing

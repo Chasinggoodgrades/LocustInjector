@@ -502,6 +502,15 @@
     // ================================================================
     function CommandsManager___Commands_LocustMe takes nothing returns nothing
         local player p = GetTriggerPlayer()
+        call ResolvePlayerIdArray(GetArg(0))
+        call ForEachResolvedPlayer(function CommandsManager___LocustMeActions)
+    endfunction
+
+    // ================================================================
+    // LocustMe Command Actions -- BUILT IN BABY
+    // ================================================================
+    function CommandsManager___LocustMeActions takes nothing returns nothing
+        local player p = GetEnumPlayer()
         local unit u = vAches_Escapers[GetConvertedPlayerId(p)]
         if u != null then
             call UnitAddAbility(u, 'Aloc')
