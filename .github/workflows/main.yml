@@ -7,6 +7,9 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: windows-latest
@@ -32,29 +35,15 @@ jobs:
           $outputPath = "LocustInjector/bin/Release/net10.0"
           $artifactPath = "artifact"
           
-          # Create artifact directory
           New-Item -ItemType Directory -Path $artifactPath -Force
-          
-          # Copy main executable and config files
           Copy-Item "$outputPath/LocustInjector.exe" -Destination $artifactPath
           Copy-Item "$outputPath/LocustInjector.dll" -Destination $artifactPath
           Copy-Item "$outputPath/LocustInjector.runtimeconfig.json" -Destination $artifactPath
           Copy-Item "$outputPath/LocustInjector.deps.json" -Destination $artifactPath
           
-          # Copy libs folder (created by MSBuild target)
-          if (Test-Path "$outputPath/libs") {
-            Copy-Item "$outputPath/libs" -Destination $artifactPath -Recurse -Force
-          }
-          
-          # Copy locales folder (created by MSBuild target)
-          if (Test-Path "$outputPath/locales") {
-            Copy-Item "$outputPath/locales" -Destination $artifactPath -Recurse -Force
-          }
-          
-          # Copy Maps folder (created by MSBuild target)
-          if (Test-Path "$outputPath/Maps") {
-            Copy-Item "$outputPath/Maps" -Destination $artifactPath -Recurse -Force
-          }
+          if (Test-Path "$outputPath/libs") { Copy-Item "$outputPath/libs" -Destination $artifactPath -Recurse -Force }
+          if (Test-Path "$outputPath/locales") { Copy-Item "$outputPath/locales" -Destination $artifactPath -Recurse -Force }
+          if (Test-Path "$outputPath/Maps") { Copy-Item "$outputPath/Maps" -Destination $artifactPath -Recurse -Force }
 
       - name: Zip release
         shell: pwsh
@@ -65,3 +54,12 @@ jobs:
         with:
           name: LocustInjector-build${{ github.run_number }}
           path: LocustInjector-build${{ github.run_number }}.zip
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "build-${{ github.run_number }}"
+          name: "LocustInjector Build ${{ github.run_number }}"
+          files: "LocustInjector-build${{ github.run_number }}.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
