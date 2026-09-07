@@ -498,15 +498,6 @@
     endfunction
 
     // ================================================================
-    // LocustMe Command -- BUILT IN BABY
-    // ================================================================
-    function CommandsManager___Commands_LocustMe takes nothing returns nothing
-        local player p = GetTriggerPlayer()
-        call ResolvePlayerIdArray(GetArg(0))
-        call ForEachResolvedPlayer(function CommandsManager___LocustMeActions)
-    endfunction
-
-    // ================================================================
     // LocustMe Command Actions -- BUILT IN BABY
     // ================================================================
     function CommandsManager___LocustMeActions takes nothing returns nothing
@@ -519,6 +510,15 @@
             call ShowUnit(u, true)
             call BlzSetUnitBooleanField(u, UNIT_BF_HERO_HIDE_HERO_DEATH_MESSAGE, true)
         endif
+    endfunction
+
+    // ================================================================
+    // LocustMe Command -- BUILT IN BABY
+    // ================================================================
+    function CommandsManager___Commands_LocustMe takes nothing returns nothing
+        local player p = GetTriggerPlayer()
+        call ResolvePlayerIdArray(GetArg(0))
+        call ForEachResolvedPlayer(function CommandsManager___LocustMeActions)
     endfunction
 
     // ================================================================
