@@ -1,10 +1,7 @@
-﻿public sealed class LocustInjector : IJassInjector
-{
-    private const string LocustAbilityCode = "'Aloc'";
-    private const string BearFormAbilityCode = "'Abrf'";
-    private const string TriggerInitUnit = "gg_trg_LocustInit";
-    private const string TriggerEnterMap = "gg_trg_LocustEnter";
+using System.Reflection;
 
+public sealed class LocustInjector : IJassInjector
+{
     public string Name => "Locust Injector";
 
     // These ultimately get verified at end of map injection. 
@@ -12,8 +9,8 @@
     {
         "function Trig_LocustInit_Actions",
         "function Trig_LocustEnter_Actions",
-        TriggerInitUnit,
-        TriggerEnterMap,
+        "gg_trg_LocustInit",
+        "gg_trg_LocustEnter",
     };
 
     public void Inject(JassScript script)
@@ -28,96 +25,30 @@
         script.InsertIntoMainBody(GetMainCalls());
     }
 
-    private static string GetGlobalDeclarations() => $@"
-trigger {TriggerInitUnit} = null
-trigger {TriggerEnterMap} = null";
-
-
     private static string GetMainCalls() => $@"    
 call InitTrig_LocustInit()
 call InitTrig_LocustEnter()
 call Trig_LocustInit_Actions()
 ";
 
+    private static string GetGlobalDeclarations()
+    {
+        return ReadEmbeddedJassResource("Locust_Globals.j");
+    }
 
     private static string GenerateTriggerCode()
     {
-        return $@"
-//===========================================================================
-// Trigger: LocustInit (Intention is to make older maps feel a smidge more modern)
-//===========================================================================
-function Trig_LocustInit_Actions takes nothing returns nothing
-    local group g = CreateGroup()
-    local unit u
-    local player owner
-    call GroupEnumUnitsInRect(g, GetPlayableMapRect(), null)
-    loop
-        set u = FirstOfGroup(g)
-        exitwhen u == null
-        set owner = GetOwningPlayer(u)
-        
-        if GetUnitAbilityLevel(u, {LocustAbilityCode}) == 0 then
-            // Check if unit is owned by a user-controlled player
-                // Apply half-locust for player units
-                call UnitAddAbility(u, {LocustAbilityCode})
-                call ShowUnit(u, false)
-                call UnitRemoveAbility(u, {LocustAbilityCode})
-                call ShowUnit(u, true)
-                
-                // Add Bear Form, cast it, then remove it
-                call UnitAddAbility(u, {BearFormAbilityCode})
-                call IssueImmediateOrder(u, ""bearform"")
-                call UnitRemoveAbility(u, {BearFormAbilityCode})
-        endif
-        call BlzSetUnitBooleanField(u, UNIT_BF_HERO_HIDE_HERO_DEATH_MESSAGE, true)
-        if not IsUnitType(u, UNIT_TYPE_HERO) then
-            call BlzSetUnitRealField(u, UNIT_RF_SELECTION_SCALE, -10.0)
-        endif
-        call GroupRemoveUnit(g, u)
-    endloop
-    call DestroyGroup(g)
-    set g = null
-endfunction
+        return ReadEmbeddedJassResource("Locust_Library.j");
+    }
 
-function InitTrig_LocustInit takes nothing returns nothing
-    set {TriggerInitUnit} = CreateTrigger()
-    call TriggerAddAction({TriggerInitUnit}, function Trig_LocustInit_Actions)
-endfunction
+    private static string ReadEmbeddedJassResource(string fileName)
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        var resourceName = $"{assembly.GetName().Name}.Jass.{fileName}";
 
-//===========================================================================
-// Trigger: LocustEnter (Intention is to make older maps feel a smidge more modern)
-//===========================================================================
-function Trig_LocustEnter_Conditions takes nothing returns boolean
-    return GetUnitAbilityLevel(GetTriggerUnit(), {LocustAbilityCode}) == 0
-endfunction
-
-function Trig_LocustEnter_Actions takes nothing returns nothing
-    local unit u = GetTriggerUnit()
-    local player owner = GetOwningPlayer(u)
-    
-    // Check if unit is owned by a user-controlled player
-        // Apply half-locust for player units
-        call UnitAddAbility(u, {LocustAbilityCode})
-        call ShowUnit(u, false)
-        call UnitRemoveAbility(u, {LocustAbilityCode})
-        call ShowUnit(u, true)
-        
-        // Add Bear Form, cast it, then remove it
-        call UnitAddAbility(u, {BearFormAbilityCode})
-        call IssueImmediateOrder(u, ""bearform"")
-        call UnitRemoveAbility(u, {BearFormAbilityCode})
-        call BlzSetUnitBooleanField(u, UNIT_BF_HERO_HIDE_HERO_DEATH_MESSAGE, true)
-        if not IsUnitType(u, UNIT_TYPE_HERO) then
-            call BlzSetUnitRealField(u, UNIT_RF_SELECTION_SCALE, -10.0)
-        endif
-endfunction
-
-function InitTrig_LocustEnter takes nothing returns nothing
-    set {TriggerEnterMap} = CreateTrigger()
-    call TriggerRegisterEnterRectSimple({TriggerEnterMap}, GetPlayableMapRect())
-    call TriggerAddCondition({TriggerEnterMap}, Condition(function Trig_LocustEnter_Conditions))
-    call TriggerAddAction({TriggerEnterMap}, function Trig_LocustEnter_Actions)
-endfunction
-";
+        using var stream = assembly.GetManifestResourceStream(resourceName)
+            ?? throw new InvalidOperationException($"Embedded JASS resource '{resourceName}' was not found.");
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
     }
 }
