@@ -3,7 +3,7 @@ using System.Text.RegularExpressions;
 public static class WTSInjector
 {
     public const string TargetWtsFileName = "war3map.wts";
-    private const string Suffix = "_vAches";
+    private const string Suffix = "_vAchesV" + AppVersion.Current;
 
     /// <summary>
     /// Appends the "_vAches" suffix to the map-name text stored in STRING 3 of the
