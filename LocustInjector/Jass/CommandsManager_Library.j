@@ -455,6 +455,20 @@
     endfunction
 
     // ================================================================
+    // Day Command -- BUILT IN BABY
+    // ================================================================
+    function CommandsManager___Commands_Day takes nothing returns nothing
+        call SetTimeOfDay(6.00)
+    endfunction
+
+    // ================================================================
+    // Night Command -- BUILT IN BABY
+    // ================================================================
+    function CommandsManager___Commands_Night takes nothing returns nothing
+        call SetTimeOfDay(20.00)
+    endfunction
+
+    // ================================================================
     // Zoom Command -- BUILT IN BABY
     // ================================================================
     function CommandsManager___Commands_Zoom takes nothing returns nothing
@@ -612,6 +626,8 @@
         call RegisterCommand("zoom" , "cam" , COMMAND_TIER_ALL , "[zoom]" , "Zooms your camera out to the passed value" , function CommandsManager___Commands_Zoom)
         call RegisterCommand("reset" , "r" , COMMAND_TIER_ALL , "" , "Resets your camera to 2400 zoom" , function CommandsManager___Commands_Reset)
         call RegisterCommand("overheadcam" , "ohc" , COMMAND_TIER_ALL , "" , "Sets your camera to an overhead view" , function CommandsManager___Commands_OHC)
+        call RegisterCommand("day" , "" , COMMAND_TIER_RED , "" , "Sets the time of day to day" , function CommandsManager___Commands_Day)
+        call RegisterCommand("night" , "" , COMMAND_TIER_RED , "" , "Sets the time of day to night" , function CommandsManager___Commands_Night)
         call RegisterCommand("level" , "lvl" , COMMAND_TIER_DEVELOPER , "[level]" , "Sets your hero's level to the passed value" , function CommandsManager___Commands_SetHeroLevel) // This is more or less an example rather than a useable command for anyone.
         call RegisterCommand("locustme" , "locust" , COMMAND_TIER_ALL , "" , "Applies the locust effect to your hero if it didn't on init or spawn" , function CommandsManager___Commands_LocustMe)
         call RegisterCommand("rtr" , "" , COMMAND_TIER_VIP , "" , "Runs the RTR Logic" , function CommandsManager___Commands_RTR)
