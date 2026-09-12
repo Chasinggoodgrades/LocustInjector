@@ -201,6 +201,7 @@ public static class MpqInPlacePatcher
     {
         var data = File.ReadAllBytes(mapPath);
         var headerOffset = FindHeaderOffset(data);
+        Console.WriteLine($"MPQ header found at offset 0x{headerOffset:X} (0x{headerOffset + 32:X} end)");
 
         uint ReadU32(int pos) => BitConverter.ToUInt32(data, pos);
         ushort ReadU16(int pos) => BitConverter.ToUInt16(data, pos);

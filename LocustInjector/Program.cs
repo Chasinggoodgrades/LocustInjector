@@ -5,7 +5,6 @@ public static class Program
 {
     public static void Main(string[] args)
     {
-        // Set up assembly resolver to find DLLs in libs folder
         AssemblyLoadContext.Default.Resolving += (context, assemblyName) =>
         {
             var libsPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "libs", $"{assemblyName.Name}.dll");
@@ -15,6 +14,20 @@ public static class Program
             }
             return null;
         };
+
+        if (args.Length > 0 && string.Equals(args[0], "--test-roundtrip", StringComparison.OrdinalIgnoreCase))
+        {
+            RunRoundTripTest(args);
+            return;
+        }
+
+        if (args.Length > 0 && string.Equals(args[0], "--test-isolate", StringComparison.OrdinalIgnoreCase))
+        {
+            RunIsolationTest(args);
+            return;
+        }
+
+
 
         try
         {
@@ -140,5 +153,120 @@ public static class Program
 
         Console.WriteLine("\nPress any key to exit...");
         Console.ReadKey();
+    }
+
+    // testing each indiivdual injection target type.. cuz what the fuck.
+    private static void RunIsolationTest(string[] args)
+    {
+        if (args.Length < 3)
+        {
+            Console.WriteLine("Usage: LocustInjector.exe --test-isolate \"<mapPath>\" <jass|wts|misc|jass+wts|jass+misc|wts+misc|all> [\"<outputPath>\"]");
+            return;
+        }
+
+        var testMapPath = args[1];
+        var targetsArg = args[2];
+
+        if (!File.Exists(testMapPath))
+        {
+            Console.WriteLine($"Map not found: {testMapPath}");
+            return;
+        }
+
+        InjectionTargets targets = InjectionTargets.None;
+        foreach (var part in targetsArg.Split('+', StringSplitOptions.RemoveEmptyEntries))
+        {
+            targets |= part.Trim().ToLowerInvariant() switch
+            {
+                "jass" => InjectionTargets.Jass,
+                "wts" => InjectionTargets.Wts,
+                "misc" => InjectionTargets.Misc,
+                "all" => InjectionTargets.All,
+                _ => throw new ArgumentException($"Unknown target '{part}'. Use jass, wts, misc, or a '+'-joined combination, or 'all'.")
+            };
+        }
+
+        var testOutputPath = args.Length > 3
+            ? args[3]
+            : Path.Combine(
+                Path.GetDirectoryName(testMapPath) ?? string.Empty,
+                $"{Path.GetFileNameWithoutExtension(testMapPath)}_isolate_{targetsArg.Replace('+', '-')}{Path.GetExtension(testMapPath)}");
+
+        var tempOutputPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "temp_output_isolate");
+
+        try
+        {
+            MPQExtractor.ExtractJFile(testMapPath, tempOutputPath);
+            JassInjectionPipeline.Run(tempOutputPath, InjectionList.Injectors);
+
+            var filesToWrite = MPQInjector.BuildFilesToWrite(testMapPath, tempOutputPath, targets, out _);
+
+            Console.WriteLine($"Writing {filesToWrite.Count} file(s) for target set '{targetsArg}': {string.Join(", ", filesToWrite.Keys)}");
+            MpqInPlacePatcher.Patch(testMapPath, testOutputPath, filesToWrite);
+
+            Console.WriteLine($"Isolation test succeeded: {testOutputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Isolation test failed: {ex.Message}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        }
+        finally
+        {
+            if (Directory.Exists(tempOutputPath))
+            {
+                Directory.Delete(tempOutputPath, true);
+            }
+        }
+    }
+
+    // base test... nothing modified other than extracting and saving. .. PASSES
+    private static void RunRoundTripTest(string[] args)
+    {
+        if (args.Length < 2)
+        {
+            Console.WriteLine("Usage: LocustInjector.exe --test-roundtrip \"<mapPath>\" [\"<outputPath>\"]");
+            return;
+        }
+
+        var testMapPath = args[1];
+        var testOutputPath = args.Length > 2
+            ? args[2]
+            : Path.Combine(
+                Path.GetDirectoryName(testMapPath) ?? string.Empty,
+                $"{Path.GetFileNameWithoutExtension(testMapPath)}_roundtrip{Path.GetExtension(testMapPath)}");
+
+        if (!File.Exists(testMapPath))
+        {
+            Console.WriteLine($"Map not found: {testMapPath}");
+            return;
+        }
+
+        try
+        {
+            byte[] originalJassBytes;
+            string jassFileName;
+            using (var archive = War3Net.IO.Mpq.MpqArchive.Open(testMapPath, loadListFile: true))
+            {
+                var candidates = new[] { "Scripts\\war3map.j", "war3map.j" };
+                jassFileName = candidates.First(archive.FileExists);
+                using var stream = archive.OpenFile(jassFileName);
+                using var ms = new MemoryStream();
+                stream.CopyTo(ms);
+                originalJassBytes = ms.ToArray();
+            }
+
+            MpqInPlacePatcher.Patch(testMapPath, testOutputPath, new Dictionary<string, byte[]>
+            {
+                [jassFileName] = originalJassBytes
+            });
+
+            Console.WriteLine($"Round-trip test succeeded: {testOutputPath}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Round-trip test failed: {ex.Message}");
+            Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+        }
     }
 }
